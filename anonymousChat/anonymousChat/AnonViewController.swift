@@ -13,27 +13,27 @@ import MultipeerConnectivity
 
 class AnonViewController: UIViewController {
     
-    var peerID: MCPeerID!
-    var mySession: MCSession!
-    var mcAdvertiserAssistant: MCAdvertiserAssistant!
+    var serviceManager = AnonServiceManager()
     
     var managedObjectContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     var personalHandle = ""
     var messageArr = [Message]()
+    var connectedPeers = [String]()
     
     @IBOutlet var postButton: UIButton!
     @IBOutlet var messageField: UITextField!
     @IBOutlet var messageTableView: UITableView!
     @IBOutlet var headerLabel: UILabel!
     @IBOutlet var logo: UIImageView!
+    @IBOutlet var logoTapGesture: UITapGestureRecognizer!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        serviceManager.delegate = self
+        
         //Lets image be clicked
         enableImageInteraction()
-        
-        setupConnection()
         
         messageTableView.delegate = self
         messageTableView.dataSource = self
@@ -48,26 +48,12 @@ class AnonViewController: UIViewController {
     @IBAction func logoIsTapped(_ sender: UITapGestureRecognizer) {
         
         print("logo tapped")
-        if setupConnection() {
-            let actionsheet = UIAlertController(title: "Messages Exchange", message: "Do you want to Host or Join a session?", preferredStyle: .actionSheet)
-            
-            actionsheet.addAction(UIAlertAction(title: "Host Session", style: .default, handler: { (action: UIAlertAction) in
-                self.mcAdvertiserAssistant = MCAdvertiserAssistant(serviceType: "an-do", discoveryInfo: nil, session: self.mySession)
-                self.mcAdvertiserAssistant.start()
-            }))
-            
-            actionsheet.addAction(UIAlertAction(title: "Join Session", style: .default, handler: { (action: UIAlertAction) in
-                let mcBrowser = MCBrowserViewController(serviceType: "an-do", session: self.mySession)
-                mcBrowser.delegate = self
-                self.present(mcBrowser, animated: true, completion: nil)
-            }))
-            
-            actionsheet.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
-            self.present(actionsheet, animated: true, completion: nil)
-        }
-        else {
-            return
-        }
+        //Alert the user if anyone is connected
+        
+        let alert = UIAlertController(title: "Connected Peeps", message: "You are currently connected to \(String(describing: serviceManager.session.connectedPeers.count)) peers", preferredStyle: .actionSheet)
+        let action = UIAlertAction(title: "Ok", style: .default, handler: nil)
+        alert.addAction(action)
+        present(alert, animated: true, completion: nil)
     }
     
     @IBAction func submitDoubleTapped(_ sender: UIButton) {
@@ -98,11 +84,13 @@ class AnonViewController: UIViewController {
                 newMessage.content = messageField.text!
                 newMessage.username = personalHandle
                 let date = Date()
+                print(date)
                 newMessage.date = date
+                let messageDict: NSDictionary = ["content": newMessage.content!, "date": String(describing: newMessage.date), "handle": newMessage.username!]
                 saveContext()
                 fetchAndReload()
                 messageField.text = ""
-                sendData(newMessage: newMessage)
+                serviceManager.send(newMessage: messageDict)
             }
             else {
                 return
@@ -115,6 +103,7 @@ class AnonViewController: UIViewController {
         if sender.titleLabel?.text == "Handle" {
             if messageField.text != "" {
                 personalHandle = messageField.text!
+                serviceManager = AnonServiceManager()
                 postButton.setTitle("Post", for: .normal)
                 messageField.text? = ""
                 messageField.placeholder = "What do you wanna say?"
@@ -133,10 +122,11 @@ class AnonViewController: UIViewController {
                 newMessage.username = personalHandle
                 let date = Date()
                 newMessage.date = date
+                let messageDict: NSDictionary = ["content": newMessage.content!, "date": String(describing: newMessage.date!), "handle": newMessage.username!]
                 saveContext()
-                sendData(newMessage: newMessage)
                 fetchAndReload()
                 messageField.text = ""
+                serviceManager.send(newMessage: messageDict)
             }
             else {
                 return
@@ -145,13 +135,9 @@ class AnonViewController: UIViewController {
         messageField.resignFirstResponder()
     }
     
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-    
     func enableImageInteraction() {
         logo.isUserInteractionEnabled = true
+        print("logo is prepped: \(logo.isUserInteractionEnabled)")
     }
 }
 
@@ -184,14 +170,31 @@ extension AnonViewController {
         } catch {
             print("failed in fetch", error)
         }
-        messageTableView.reloadData()
+        
+        DispatchQueue.main.async {
+            self.messageTableView.reloadData()
+        }
+        
+//        let indexPath = IndexPath(row: 0, section: 0)
+//        messageTableView.scrollToRow(at: indexPath, at: .top, animated: false)
     }
 }
 
-// MARK: - Table view data source
+// MARK: - TableView Methods
 
 extension AnonViewController: UITableViewDelegate {
     
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
+        
+        let messageToDel = messageArr[indexPath.row]
+        managedObjectContext.delete(messageToDel)
+        saveContext()
+        fetchAndReload()
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        messageField.resignFirstResponder()
+    }
 }
 
 extension AnonViewController: UITableViewDataSource {
@@ -208,94 +211,35 @@ extension AnonViewController: UITableViewDataSource {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "MM/dd/yyyy h:mm a"
         dateFormatter.date
-        cell.dateLabel.text = dateFormatter.string(from: date!)
+        if let dateisok = date {
+            cell.dateLabel.text = dateFormatter.string(from: date!)
+        } else {
+            print("date: \(date)")
+        }
         cell.nameLabel.text = messageArr[indexPath.row].username
         tableView.rowHeight = 72
         return cell
     }
 }
 
-// MARK: Multipeer Connectivity Functions
-
-extension AnonViewController: MCSessionDelegate, MCBrowserViewControllerDelegate {
-    
-    func sendData(newMessage: Message) {
-        if mySession.connectedPeers.count > 0 {
-            
-            var sendArray = [Message]()
-            sendArray.append(newMessage)
-            do {
-                let myData = try
-                    JSONSerialization.data(withJSONObject: sendArray, options: .prettyPrinted)
-                do {
-                    try mySession.send(myData, toPeers: mySession.connectedPeers, with: .reliable)
-                    } catch {
-                    print("failed to send data", error)
-                }
-            } catch {
-                print("failed to convert to Data")
-            }
-        }
+extension AnonViewController: AnonServiceManagerDelegate {
+    func connectedDevicesChanged(manager: AnonServiceManager, connectedDevices: [String]) {
+        connectedPeers = connectedDevices
     }
     
-    func setupConnection() -> Bool {
-        if personalHandle != "" {
-            self.peerID = MCPeerID(displayName: self.personalHandle)
-            mySession = MCSession(peer: peerID, securityIdentity: nil, encryptionPreference: .required)
-            mySession.delegate = self
-            return true
-        }
-        return false
+    func newMessageReceived(manager: AnonServiceManager, messageDictionary: NSDictionary) {
+        print("look at meeeeeeeeeee")
+        let receivedMessage = Message(context: managedObjectContext)
+        receivedMessage.content = (messageDictionary.value(forKey: "content") as! String)
+//        let dateFormatter = DateFormatter()
+//        dateFormatter.dateStyle = .full
+//        dateFormatter.timeStyle = .full
+//        let dateStr = String(describing: messageDictionary.value(forKey: "date"))
+//        let formattedDate = dateFormatter.date(from: dateStr)
+//        print("formatted: \(formattedDate) \(messageDictionary.allValues)")
+        receivedMessage.date = Date()
+        receivedMessage.username = (messageDictionary.value(forKey: "handle") as! String)
+        saveContext()
+        fetchAndReload()
     }
-    
-    func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
-        switch state {
-        case MCSessionState.connected:
-            print("Connected: \(peerID.displayName)")
-        case MCSessionState.connecting:
-            print("Connecting: \(peerID.displayName)")
-        case MCSessionState.notConnected:
-            print("Not Connected: \(peerID.displayName)")
-        }
-    }
-    
-    func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
-        
-        do {
-            let receivedMessage = try JSONDecoder().decode([Message].self, from: data)
-            var message = Message(context: managedObjectContext)
-            message = receivedMessage[0]
-            saveContext()
-            
-            DispatchQueue.main.async {
-                self.fetchAndReload()
-            }
-        } catch {
-            print("failed to decode", error)
-        }
-    }
-    
-    func session(_ session: MCSession, didReceive stream: InputStream, withName streamName: String, fromPeer peerID: MCPeerID) {
-        
-    }
-    
-    func session(_ session: MCSession, didStartReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, with progress: Progress) {
-        
-    }
-    
-    func session(_ session: MCSession, didFinishReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, at localURL: URL?, withError error: Error?) {
-        
-    }
-    
-    func browserViewControllerDidFinish(_ browserViewController: MCBrowserViewController) {
-        dismiss(animated: true, completion: nil)
-    }
-    
-    func browserViewControllerWasCancelled(_ browserViewController: MCBrowserViewController) {
-        dismiss(animated: true, completion: nil)
-    }
-    
-    
-    
 }
-

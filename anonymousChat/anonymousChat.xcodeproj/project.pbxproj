@@ -16,6 +16,8 @@
 		CE299BA62020D056000E9D69 /* anonymousChatUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE299BA52020D056000E9D69 /* anonymousChatUITests.swift */; };
 		CE299BB42020D2AE000E9D69 /* MessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE299BB32020D2AE000E9D69 /* MessageCell.swift */; };
 		CE299BB62020D30C000E9D69 /* AnonViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE299BB52020D30C000E9D69 /* AnonViewController.swift */; };
+		CEEB5AF22022E2E400F1ABD9 /* AnonServiceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEB5AF12022E2E400F1ABD9 /* AnonServiceManager.swift */; };
+		CEEB5AF42022E32D00F1ABD9 /* AnonServiceManagerProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEB5AF32022E32D00F1ABD9 /* AnonServiceManagerProtocol.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -51,6 +53,8 @@
 		CE299BA72020D056000E9D69 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		CE299BB32020D2AE000E9D69 /* MessageCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageCell.swift; sourceTree = "<group>"; };
 		CE299BB52020D30C000E9D69 /* AnonViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnonViewController.swift; sourceTree = "<group>"; };
+		CEEB5AF12022E2E400F1ABD9 /* AnonServiceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnonServiceManager.swift; sourceTree = "<group>"; };
+		CEEB5AF32022E32D00F1ABD9 /* AnonServiceManagerProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnonServiceManagerProtocol.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -109,6 +113,8 @@
 				CE299B8E2020D056000E9D69 /* LaunchScreen.storyboard */,
 				CE299B912020D056000E9D69 /* Info.plist */,
 				CE299B892020D056000E9D69 /* anonymousChat.xcdatamodeld */,
+				CEEB5AF12022E2E400F1ABD9 /* AnonServiceManager.swift */,
+				CEEB5AF32022E32D00F1ABD9 /* AnonServiceManagerProtocol.swift */,
 			);
 			path = anonymousChat;
 			sourceTree = "<group>";
@@ -265,7 +271,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CEEB5AF42022E32D00F1ABD9 /* AnonServiceManagerProtocol.swift in Sources */,
 				CE299BB42020D2AE000E9D69 /* MessageCell.swift in Sources */,
+				CEEB5AF22022E2E400F1ABD9 /* AnonServiceManager.swift in Sources */,
 				CE299B8B2020D056000E9D69 /* anonymousChat.xcdatamodeld in Sources */,
 				CE299B832020D056000E9D69 /* AppDelegate.swift in Sources */,
 				CE299BB62020D30C000E9D69 /* AnonViewController.swift in Sources */,
@@ -435,6 +443,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2K4PGE2V6E;
 				INFOPLIST_FILE = anonymousChat/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.user.anonymousChat;
@@ -449,6 +458,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2K4PGE2V6E;
 				INFOPLIST_FILE = anonymousChat/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.user.anonymousChat;
