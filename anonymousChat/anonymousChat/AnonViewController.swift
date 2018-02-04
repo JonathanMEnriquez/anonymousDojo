@@ -19,6 +19,7 @@ class AnonViewController: UIViewController {
     var personalHandle = ""
     var messageArr = [Message]()
     var connectedPeers = [String]()
+    var viewIsMovedUp = false
     
     @IBOutlet var postButton: UIButton!
     @IBOutlet var messageField: UITextField!
@@ -30,6 +31,10 @@ class AnonViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        // TODO: https://medium.com/the-traveled-ios-developers-guide/devicecheck-6f3eafac60e5
+        // TODO: find ways to allow users to mute nearby users using the UUID, maybe filter messages coming in?
+        print(UIDevice.current.identifierForVendor!)
+    
         serviceManager.delegate = self
         
         //Lets image be clicked
@@ -39,11 +44,55 @@ class AnonViewController: UIViewController {
         messageTableView.dataSource = self
         fetchAndReload()
         
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardPresented), name: NSNotification.Name.UIKeyboardWillShow, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardDisappeared), name: NSNotification.Name.UIKeyboardWillHide, object: nil)
+        
+        // TODO: Add observers for change in orientation
+        
         postButton.layer.cornerRadius = 5
         messageTableView.layer.borderColor = UIColor.lightGray.cgColor
         messageTableView.layer.backgroundColor = #colorLiteral(red: 0.9214683175, green: 0.9216262698, blue: 0.9214583635, alpha: 1)
         messageTableView.layer.cornerRadius = 10
     }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        messageTableView.reloadData()
+    }
+    
+    @objc func keyboardPresented(notification: Notification) {
+        let info = notification.userInfo!
+        let keyboardFrame: CGRect = (info[UIKeyboardFrameEndUserInfoKey] as! NSValue).cgRectValue
+        UIView.animate(withDuration: 0.1, animations: {
+            self.view.frame = CGRect(x:self.view.frame.origin.x, y:self.view.frame.origin.y - keyboardFrame.height, width:self.view.frame.size.width, height:self.view.frame.size.height);
+        })
+    }
+    
+    @objc func keyboardDisappeared(notification: Notification) {
+        let info = notification.userInfo!
+        let keyboardFrame: CGRect = (info[UIKeyboardFrameEndUserInfoKey] as! NSValue).cgRectValue
+        UIView.animate(withDuration: 0.1, animations: {
+            self.view.frame = CGRect(x:self.view.frame.origin.x, y:self.view.frame.origin.y + keyboardFrame.height, width:self.view.frame.size.width, height:self.view.frame.size.height);
+                    })
+    }
+    
+    @IBAction func userClickedTextField(_ sender: UITextField) {
+//        if viewIsMovedUp == false {
+//            UIView.animate(withDuration: 0.475, animations: {
+//                self.view.frame = CGRect(x:self.view.frame.origin.x, y:self.view.frame.origin.y - 250, width:self.view.frame.size.width, height:self.view.frame.size.height);
+//            })
+//            viewIsMovedUp = true
+//        }
+    }
+    
+    @IBAction func textFieldDidEndEditing(_ sender: UITextField) {
+//        if viewIsMovedUp == true {
+//            UIView.animate(withDuration: 0.25, animations: {
+//                self.view.frame = CGRect(x:self.view.frame.origin.x, y:self.view.frame.origin.y + 250, width:self.view.frame.size.width, height:self.view.frame.size.height);
+//                        })
+//            viewIsMovedUp = false
+//        }
+    }
+    
     
     @IBAction func logoIsTapped(_ sender: UITapGestureRecognizer) {
         
@@ -214,7 +263,7 @@ extension AnonViewController: UITableViewDataSource {
         if let dateisok = date {
             cell.dateLabel.text = dateFormatter.string(from: date!)
         } else {
-            print("date: \(date)")
+            print("date: \(String(describing: date))")
         }
         cell.nameLabel.text = messageArr[indexPath.row].username
         tableView.rowHeight = 72
@@ -228,7 +277,6 @@ extension AnonViewController: AnonServiceManagerDelegate {
     }
     
     func newMessageReceived(manager: AnonServiceManager, messageDictionary: NSDictionary) {
-        print("look at meeeeeeeeeee")
         let receivedMessage = Message(context: managedObjectContext)
         receivedMessage.content = (messageDictionary.value(forKey: "content") as! String)
 //        let dateFormatter = DateFormatter()

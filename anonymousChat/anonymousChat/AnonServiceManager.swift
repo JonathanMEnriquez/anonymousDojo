@@ -5,7 +5,7 @@ class AnonServiceManager : NSObject {
     
     var delegate: AnonServiceManagerDelegate?
     private let AnonServiceType = "an-do"
-    private var myPeerID = MCPeerID(displayName: "temp\(arc4random_uniform(10000))")
+    private var myPeerID = MCPeerID(displayName: String(describing: UIDevice.current.identifierForVendor))
 //    private var myPeerID = MCPeerID(displayName: UIDevice.current.name)
     private let serviceAdvertiser : MCNearbyServiceAdvertiser
     private let serviceBrowser : MCNearbyServiceBrowser
